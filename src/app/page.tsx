@@ -12,7 +12,6 @@ import { client } from "@/app/client"
 import { getContractMetadata } from "thirdweb/extensions/common"
 import { useReadContract, useActiveAccount } from "thirdweb/react"
 import { MediaRenderer } from "thirdweb/react"
-import { useEffect } from "react"
 import { claimTo } from "thirdweb/extensions/erc721"
 import { TransactionButton } from "thirdweb/react"
 
@@ -227,7 +226,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Holders will automatically receive future digital collectibles and tokens as they're released.
+                Holders will automatically receive future digital collectibles and tokens as they&apos;re released.
               </p>
             </CardContent>
           </Card>
