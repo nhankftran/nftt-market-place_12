@@ -25,13 +25,15 @@ export default function RootLayout({
 }>) {
   return (
     <ThirdwebProvider>
-      <html lang="en">
+      <html lang="en" className="h-full">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen w-full`}
         >
-          {children}
+          <div className="relative flex min-h-screen flex-col">
+            {children}
+          </div>
         </body>
-        </html>
+      </html>
     </ThirdwebProvider>
   );
 }
