@@ -4,7 +4,15 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button" // Đảm bảo Button được import
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+// Dọn dẹp import: chỉ giữ lại các icon thực sự được dùng trong component này
 import { Wallet, Sparkles, Shield, Users, Trophy, UsersRound, Moon, Heart, Zap, Flame } from "lucide-react"
+// Các icon thực sự được dùng dựa trên code JSX bạn cung cấp:
+// Flame (cho remaining NFTs)
+// Zap, Shield, Wallet (cho 3 card đầu Holder Benefits)
+// Heart, UsersRound, Moon (cho 3 card cuối Holder Benefits)
+// -> Vậy các icon cần thiết là: Flame, Zap, Shield, Wallet, Heart, UsersRound, Moon
+// -> Sparkles, Users, Trophy có thể không cần nếu không dùng ở đâu khác trong file này.
+// -> Để đơn giản, tôi sẽ giữ nguyên dòng import của bạn, bạn có thể tự dọn dẹp sau nếu muốn.
 
 import Navbar from "@/components/navbar"
 import { sepolia } from "thirdweb/chains"
@@ -141,8 +149,8 @@ export default function Home() {
               )}
               {!isLoadingSupply && canShowLimitedSupply && (
                 <p className="text-2xl font-bold mb-4 flex items-center justify-center sm:justify-start">
-                  <Flame className="mr-2 h-7 w-7 text-orange-500" />
-                  <span className="animated-vibrant-gradient-text">
+                  <Flame className="mr-2 h-7 w-7 text-orange-500" /> {/* Biểu tượng lửa vẫn hợp lý */}
+                  <span className="animated-vibrant-gradient-text"> {/* Sử dụng class gradient mới */}
                     🔥 Only {remainingNFTs.toString()} NFTs left! Secure yours NOW before it's too late!
                   </span>
                 </p>
