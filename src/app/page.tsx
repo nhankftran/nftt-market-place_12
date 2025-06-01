@@ -1,18 +1,10 @@
 "use client"
 
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button" // Đảm bảo Button được import
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-// Dọn dẹp import: chỉ giữ lại các icon thực sự được dùng trong component này
 import { Wallet, Sparkles, Shield, Users, Trophy, UsersRound, Moon, Heart, Zap, Flame } from "lucide-react"
-// Các icon thực sự được dùng dựa trên code JSX bạn cung cấp:
-// Flame (cho remaining NFTs)
-// Zap, Shield, Wallet (cho 3 card đầu Holder Benefits)
-// Heart, UsersRound, Moon (cho 3 card cuối Holder Benefits)
-// -> Vậy các icon cần thiết là: Flame, Zap, Shield, Wallet, Heart, UsersRound, Moon
-// -> Sparkles, Users, Trophy có thể không cần nếu không dùng ở đâu khác trong file này.
-// -> Để đơn giản, tôi sẽ giữ nguyên dòng import của bạn, bạn có thể tự dọn dẹp sau nếu muốn.
 
 import Navbar from "@/components/navbar"
 import { sepolia } from "thirdweb/chains"
@@ -142,7 +134,6 @@ export default function Home() {
                 )}
               </div>
 
-              {/* THAY ĐỔI DÒNG THÔNG BÁO SỐ LƯỢNG NFT CÒN LẠI */}
               {isLoadingSupply && (
                 <p className="text-lg font-semibold text-muted-foreground mb-4 animate-pulse">
                   Loading supply...
@@ -150,8 +141,8 @@ export default function Home() {
               )}
               {!isLoadingSupply && canShowLimitedSupply && (
                 <p className="text-2xl font-bold mb-4 flex items-center justify-center sm:justify-start">
-                  <Flame className="mr-2 h-7 w-7 text-orange-500" /> {/* Biểu tượng lửa vẫn hợp lý */}
-                  <span className="animated-vibrant-gradient-text"> {/* Sử dụng class gradient mới */}
+                  <Flame className="mr-2 h-7 w-7 text-orange-500" />
+                  <span className="animated-vibrant-gradient-text">
                     🔥 Only {remainingNFTs.toString()} NFTs left! Secure yours NOW before it's too late!
                   </span>
                 </p>
@@ -161,8 +152,6 @@ export default function Home() {
                   SOLD OUT!
                 </p>
               )}
-              {/* KẾT THÚC THAY ĐỔI */}
-
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <TransactionButton
@@ -249,15 +238,33 @@ export default function Home() {
                   The collection explores themes of digital ownership and scarcity in an increasingly virtual world.
                   Holders gain access to exclusive community benefits and future airdrops.
                 </p>
-                <div className="flex items-center gap-4 pt-4">
-                  <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-background">
+                {/* THAY ĐỔI BẮT ĐẦU: Thêm box "View Portfolio" */}
+                <div className="flex items-start gap-4 pt-4"> {/* Thay đổi items-center thành items-start nếu muốn nút portfolio căn chỉnh tốt hơn khi text dài */}
+                  <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-background flex-shrink-0">
                     <Image src="/placeholder.svg?height=64&width=64&text=AC" alt="Artist" width={64} height={64} />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-semibold text-lg">Created by</h3>
-                    <p className="text-xl font-bold">sinh viên EUEH</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3"> {/* Cho phép wrap trên mobile và align trên desktop */}
+                        <p className="text-xl font-bold">nhan pro vip max prenium</p>
+                        <Button
+                            size="sm" // Kích thước nhỏ
+                            variant="outline" // Kiểu outline cho "box"
+                            className="mt-1 sm:mt-0 text-xs px-2 py-1 h-auto" // Tùy chỉnh padding và chiều cao, text nhỏ hơn
+                            asChild
+                        >
+                            <a
+                            href="https://www.facebook.com/nhan.tran.171750/" 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            >
+                            View Portfolio
+                            </a>
+                        </Button>
+                    </div>
                   </div>
                 </div>
+                {/* THAY ĐỔI KẾT THÚC */}
               </div>
               <div className="space-y-6">
                 <h2 className="text-3xl font-bold">Collection Details</h2>
@@ -289,7 +296,6 @@ export default function Home() {
         </section>
 
         {/* Features & Benefits */}
-        {/* Giữ nguyên phần này như code hiện tại của bạn */}
         <section className="container mx-auto px-4 py-16 md:py-24">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Holder Benefits</h2>
