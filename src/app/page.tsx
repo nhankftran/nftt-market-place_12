@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button" // Đảm bảo Button được 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 // Dọn dẹp import: chỉ giữ lại các icon thực sự được dùng trong component này
-import { Wallet, Sparkles, Shield, Users, Trophy, UsersRound, Moon, Heart, Zap, Flame } from "lucide-react"
+import { Wallet,  Shield,  UsersRound, Moon, Heart, Zap, Flame } from "lucide-react"
 // Các icon thực sự được dùng dựa trên code JSX bạn cung cấp:
 // Flame (cho remaining NFTs)
 // Zap, Shield, Wallet (cho 3 card đầu Holder Benefits)
@@ -151,7 +151,7 @@ export default function Home() {
                 <p className="text-2xl font-bold mb-4 flex items-center justify-center sm:justify-start">
                   <Flame className="mr-2 h-7 w-7 text-orange-500" /> {/* Biểu tượng lửa vẫn hợp lý */}
                   <span className="animated-vibrant-gradient-text"> {/* Sử dụng class gradient mới */}
-                    🔥 Only {remainingNFTs.toString()} NFTs left! Secure yours NOW before it's too late!
+                    🔥 Only {remainingNFTs.toString()} NFTs left! Secure yours NOW before its too late!
                   </span>
                 </p>
               )}
