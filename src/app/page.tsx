@@ -1,38 +1,52 @@
-"use client"
+// src/app/page.tsx
+"use client";
 
-import Image from "next/image"
-import { Button } from "@/components/ui/button" // Đảm bảo Button được import
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-// Dọn dẹp import: chỉ giữ lại các icon thực sự được dùng trong component này
-import { Wallet,  Shield,  UsersRound, Moon, Heart, Zap, Flame } from "lucide-react"
-// Các icon thực sự được dùng dựa trên code JSX bạn cung cấp:
-// Flame (cho remaining NFTs)
-// Zap, Shield, Wallet (cho 3 card đầu Holder Benefits)
-// Heart, UsersRound, Moon (cho 3 card cuối Holder Benefits)
-// -> Vậy các icon cần thiết là: Flame, Zap, Shield, Wallet, Heart, UsersRound, Moon
-// -> Sparkles, Users, Trophy có thể không cần nếu không dùng ở đâu khác trong file này.
-// -> Để đơn giản, tôi sẽ giữ nguyên dòng import của bạn, bạn có thể tự dọn dẹp sau nếu muốn.
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-import Navbar from "@/components/navbar"
-import { sepolia } from "thirdweb/chains"
-import { getContract } from "thirdweb"
-import { client } from "@/app/client"
-import { getContractMetadata } from "thirdweb/extensions/common"
-import { useReadContract, useActiveAccount } from "thirdweb/react"
-import { MediaRenderer } from "thirdweb/react"
-import { claimTo, getActiveClaimCondition } from "thirdweb/extensions/erc721"
-import { TransactionButton } from "thirdweb/react"
-import { formatEther } from "viem"
+import { Wallet, Shield, UsersRound, Moon, Heart, Zap, Flame } from "lucide-react";
+
+import Navbar from "@/components/navbar";
+import { sepolia } from "thirdweb/chains";
+import { getContract } from "thirdweb";
+import { client } from "@/app/client";
+import { getContractMetadata } from "thirdweb/extensions/common";
+import { useReadContract, useActiveAccount } from "thirdweb/react";
+import { MediaRenderer } from "thirdweb/react";
+import { claimTo, getActiveClaimCondition } from "thirdweb/extensions/erc721";
+import { TransactionButton } from "thirdweb/react";
+import { formatEther } from "viem";
+
+// Thêm các import cần thiết cho chức năng đăng ký
+import { useState, useEffect } from 'react';
+import RegisterForm from '@/components/RegisterForm'; // Import component RegisterForm đã tạo
+
+// Định nghĩa kiểu dữ liệu cho form đăng ký (để đảm bảo đồng bộ)
+interface RegistrationFormData {
+  name: string;
+  dob: string; // YYYY-MM-DD
+  gender: 'male' | 'female' | 'other' | '';
+  maritalStatus: 'single' | 'married' | 'divorced' | 'widowed' | '';
+}
 
 export default function Home() {
-  const account = useActiveAccount();
+  const account = useActiveAccount(); // Lấy thông tin tài khoản đang hoạt động từ Thirdweb
+
+  // --- State cho chức năng Đăng ký ---
+  const [isRegistered, setIsRegistered] = useState<boolean>(false);
+  const [showRegistrationForm, setShowRegistrationForm] = useState<boolean>(false);
+  const [isLoadingForm, setIsLoadingForm] = useState<boolean>(false); // Riêng cho form đăng ký
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
+  const [registrationMessage, setRegistrationMessage] = useState<string | null>(null);
+  // --- Kết thúc State cho chức năng Đăng ký ---
 
   const contract = getContract({
     client: client,
     chain: sepolia,
     address: process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS as string,
-  })
+  });
 
   const { data: contractMetadata, isLoading: isLoadingContractMetadata } = useReadContract(getContractMetadata, {
     contract: contract,
@@ -92,6 +106,94 @@ export default function Home() {
     mintPriceDisplay = "Not for sale";
   }
 
+  // --- Bắt đầu: Logic cho chức năng Đăng ký ---
+
+  // Hàm kiểm tra trạng thái đăng ký của ví
+  const checkRegistrationStatus = async (walletAddressToCheck: string) => {
+    setIsLoadingForm(true);
+    setRegistrationError(null);
+    setRegistrationMessage(null);
+    try {
+      // Gọi API backend để kiểm tra
+      const response = await fetch(`/api/user-status?walletAddress=${walletAddressToCheck}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsRegistered(data.isRegistered);
+        if (!data.isRegistered) {
+          setShowRegistrationForm(true); // Hiển thị form nếu chưa đăng ký
+          setRegistrationMessage('Vui lòng đăng ký tài khoản để tiếp tục.');
+        } else {
+          setShowRegistrationForm(false); // Ẩn form nếu đã đăng ký
+          setRegistrationMessage('Bạn đã đăng ký tài khoản. Chào mừng quay trở lại!');
+        }
+      } else {
+        // Xử lý các lỗi HTTP khác từ backend
+        setRegistrationError(data.message || 'Lỗi khi kiểm tra trạng thái đăng ký.');
+        setShowRegistrationForm(true); // Vẫn hiển thị form để user đăng ký lại hoặc lần đầu
+      }
+    } catch (err) {
+      console.error('Lỗi khi gọi API kiểm tra trạng thái:', err);
+      setRegistrationError('Không thể kết nối server để kiểm tra trạng thái đăng ký.');
+      setShowRegistrationForm(true); // Vẫn hiển thị form nếu có lỗi kết nối
+    } finally {
+      setIsLoadingForm(false);
+    }
+  };
+
+  // Hàm xử lý việc gửi dữ liệu đăng ký từ RegisterForm
+  const handleRegisterSubmit = async (formData: RegistrationFormData) => {
+    setIsLoadingForm(true);
+    setRegistrationError(null);
+    setRegistrationMessage(null);
+    try {
+      if (!account?.address) {
+        setRegistrationError('Vui lòng kết nối ví trước khi đăng ký.');
+        setIsLoadingForm(false);
+        return;
+      }
+
+      // Gửi dữ liệu đến API backend để lưu
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...formData, walletAddress: account.address }), // Gửi cả địa chỉ ví
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setRegistrationMessage('Đăng ký thành công! Bạn có thể tiếp tục sử dụng DApp.');
+        setIsRegistered(true);
+        setShowRegistrationForm(false); // Ẩn form sau khi đăng ký thành công
+      } else {
+        setRegistrationError(data.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+      }
+    } catch (err) {
+      console.error('Lỗi khi gửi dữ liệu đăng ký:', err);
+      setRegistrationError('Lỗi kết nối server khi đăng ký.');
+    } finally {
+      setIsLoadingForm(false);
+    }
+  };
+
+  // Sử dụng useEffect để kiểm tra trạng thái đăng ký mỗi khi account thay đổi (kết nối/ngắt kết nối ví)
+  useEffect(() => {
+    if (account?.address) {
+      checkRegistrationStatus(account.address);
+    } else {
+      // Reset trạng thái nếu ví không được kết nối
+      setIsRegistered(false);
+      setShowRegistrationForm(false);
+      setRegistrationError(null);
+      setRegistrationMessage('Vui lòng kết nối ví.');
+    }
+  }, [account?.address]); // Dependency array: chạy lại khi account.address thay đổi
+
+  // --- Kết thúc: Logic cho chức năng Đăng ký ---
+
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
@@ -142,6 +244,7 @@ export default function Home() {
                 )}
               </div>
 
+              {/* THAY ĐỔI DÒNG THÔNG BÁO SỐ LƯỢNG NFT CÒN LẠI */}
               {isLoadingSupply && (
                 <p className="text-lg font-semibold text-muted-foreground mb-4 animate-pulse">
                   Loading supply...
@@ -160,51 +263,82 @@ export default function Home() {
                   SOLD OUT!
                 </p>
               )}
+              {/* KẾT THÚC THAY ĐỔI */}
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <TransactionButton
-                  transaction={() => {
-                    if (!account?.address) {
-                      alert("Please connect your wallet first.");
-                      throw new Error("Account address is not defined.");
-                    }
-                    return claimTo({
-                      contract: contract,
-                      quantity: BigInt(1),
-                      to: account.address,
-                    });
-                  }}
-                  onTransactionConfirmed={async () => {
-                      alert("Transaction confirmed!");
-                  }}
-                  disabled={
-                    !account ||
-                    isLoadingSupply ||
-                    isLoadingClaimCondition ||
-                    isSoldOut ||
-                    Boolean(dataAvailable && maxSupplyCount > 0 && remainingNFTs <= BigInt(0)) ||
-                    !activeClaimCondition
-                  }
-                >
-                  {account ? (isSoldOut ? "Sold Out" : "Claim NFT") : "Connect Wallet to Claim"}
-                </TransactionButton>
+              {/* --- Bắt đầu: Logic hiển thị Form Đăng ký hoặc nút Claim NFT --- */}
+              {account?.address ? ( // Nếu ví đã kết nối
+                <>
+                  {isLoadingForm ? ( // Đang kiểm tra trạng thái đăng ký
+                    <p className="text-lg font-semibold text-blue-500 mb-4">Đang kiểm tra trạng thái đăng ký...</p>
+                  ) : (
+                    <>
+                      {registrationError && <p className="text-red-600 text-sm mb-4">{registrationError}</p>}
+                      {registrationMessage && <p className="text-green-600 text-sm mb-4">{registrationMessage}</p>}
 
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="font-semibold text-lg"
-                  asChild
-                  disabled={!contract.address}
-                >
-                  <a
-                    href={collectionUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    View Collection
-                  </a>
-                </Button>
-              </div>
+                      {!isRegistered && showRegistrationForm ? ( // Nếu chưa đăng ký và cần hiển thị form
+                        <RegisterForm
+                          onSubmit={handleRegisterSubmit}
+                          isLoading={isLoadingForm}
+                          error={registrationError}
+                        />
+                      ) : ( // Nếu đã đăng ký, hiển thị nút Claim NFT và các chức năng chính
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          <TransactionButton
+                            transaction={() => {
+                              if (!account?.address) {
+                                alert("Please connect your wallet first.");
+                                throw new Error("Account address is not defined.");
+                              }
+                              return claimTo({
+                                contract: contract,
+                                quantity: BigInt(1),
+                                to: account.address,
+                              });
+                            }}
+                            onTransactionConfirmed={async () => {
+                              alert("Transaction confirmed!");
+                            }}
+                            disabled={
+                              !account ||
+                              isLoadingSupply ||
+                              isLoadingClaimCondition ||
+                              isSoldOut ||
+                              Boolean(dataAvailable && maxSupplyCount > 0 && remainingNFTs <= BigInt(0)) ||
+                              !activeClaimCondition
+                              || !isRegistered // Disable nếu chưa đăng ký
+                            }
+                          >
+                            {isRegistered ? (isSoldOut ? "Sold Out" : "Claim NFT") : "Đăng ký để Claim"}
+                          </TransactionButton>
+
+                          <Button
+                            size="lg"
+                            variant="outline"
+                            className="font-semibold text-lg"
+                            asChild
+                            disabled={!contract.address}
+                          >
+                            <a
+                              href={collectionUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              View Collection
+                            </a>
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              ) : ( // Nếu ví chưa kết nối, chỉ hiển thị nút Connect Wallet (thường là ở Navbar, nhưng thêm ở đây cho rõ ràng)
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <p className="text-xl text-red-500 font-semibold">Vui lòng kết nối ví để tiếp tục.</p>
+                  {/* Navbar của bạn có nút Connect Wallet, nhưng bạn có thể thêm một nút lớn ở đây nữa nếu muốn */}
+                </div>
+              )}
+              {/* --- Kết thúc: Logic hiển thị Form Đăng ký hoặc nút Claim NFT --- */}
+
 
               <div className="flex items-center gap-4 pt-4">
                 <div className="flex -space-x-2">
@@ -246,33 +380,15 @@ export default function Home() {
                   The collection explores themes of digital ownership and scarcity in an increasingly virtual world.
                   Holders gain access to exclusive community benefits and future airdrops.
                 </p>
-                {/* THAY ĐỔI BẮT ĐẦU: Thêm box "View Portfolio" */}
-                <div className="flex items-start gap-4 pt-4"> {/* Thay đổi items-center thành items-start nếu muốn nút portfolio căn chỉnh tốt hơn khi text dài */}
-                  <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-background flex-shrink-0">
+                <div className="flex items-center gap-4 pt-4">
+                  <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-background">
                     <Image src="/placeholder.svg?height=64&width=64&text=AC" alt="Artist" width={64} height={64} />
                   </div>
-                  <div className="flex-1">
+                  <div>
                     <h3 className="font-semibold text-lg">Created by</h3>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3"> {/* Cho phép wrap trên mobile và align trên desktop */}
-                        <p className="text-xl font-bold">nhan pro vip max prenium</p>
-                        <Button
-                            size="sm" // Kích thước nhỏ
-                            variant="outline" // Kiểu outline cho "box"
-                            className="mt-1 sm:mt-0 text-xs px-2 py-1 h-auto" // Tùy chỉnh padding và chiều cao, text nhỏ hơn
-                            asChild
-                        >
-                            <a
-                            href="https://www.facebook.com/nhan.tran.171750/" 
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            >
-                            View Portfolio
-                            </a>
-                        </Button>
-                    </div>
+                    <p className="text-xl font-bold">sinh viên EUEH</p>
                   </div>
                 </div>
-                {/* THAY ĐỔI KẾT THÚC */}
               </div>
               <div className="space-y-6">
                 <h2 className="text-3xl font-bold">Collection Details</h2>
@@ -329,7 +445,7 @@ export default function Home() {
                 <Shield className="h-8 w-8 mb-2" />
                 <CardTitle>Governance Rights</CardTitle>
                 <CardDescription>Vote on future collection directions and community initiatives</CardDescription>
-              </CardHeader>
+              L</CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
                   Have your say in the evolution of the project and help shape its future development.
@@ -395,5 +511,5 @@ export default function Home() {
         </footer>
       </main>
     </div>
-  )
+  );
 }
