@@ -1,6 +1,22 @@
 import { NextResponse } from 'next/server';
 import { connectToDb } from '@/lib/db';
 
+// Định nghĩa interface cho PostgreSQL error
+interface PostgresError extends Error {
+    code?: string;
+    detail?: string;
+    hint?: string;
+    position?: string;
+    internalPosition?: string;
+    internalQuery?: string;
+    where?: string;
+    schema?: string;
+    table?: string;
+    column?: string;
+    dataType?: string;
+    constraint?: string;
+}
+
 export async function POST(request: Request) {
     try {
         const body = await request.json();
@@ -46,9 +62,10 @@ export async function POST(request: Request) {
                 { message: 'User registered successfully' },
                 { status: 201 }
             );
-        } catch (error: any) {
+        } catch (error) {
             // Check for duplicate wallet address error
-            if (error.code === '23505') { // PostgreSQL unique violation error code
+            const pgError = error as PostgresError;
+            if (pgError.code === '23505') { // PostgreSQL unique violation error code
                 return NextResponse.json(
                     { error: 'Wallet address already registered' },
                     { status: 409 }
