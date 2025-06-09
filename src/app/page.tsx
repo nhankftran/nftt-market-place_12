@@ -382,7 +382,13 @@ export default function Home() {
                 </p>
                 <div className="flex items-center gap-4 pt-4">
                   <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-background">
-                    <Image src="/placeholder.svg?height=64&width=64&text=AC" alt="Artist" width={64} height={64} />
+                    <Image 
+                      src="/artworks-qJ5IFyKat8H70Vkz-tYUbnQ-t1080x1080.jpg" 
+                      alt="Artist" 
+                      width={64} 
+                      height={64}
+                      className="object-cover"
+                    />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg">Created by</h3>

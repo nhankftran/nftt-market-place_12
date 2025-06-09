@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { connectToDb, sql } from '@/lib/db';
+import { connectToDb } from '@/lib/db';
 
 export async function POST(request: Request) {
     try {
@@ -28,34 +28,34 @@ export async function POST(request: Request) {
 
         const pool = await connectToDb();
 
-        // Check if wallet address already exists
-        const existingUser = await pool.request()
-            .input('walletAddress', sql.NVarChar, walletAddress)
-            .query('SELECT COUNT(*) as count FROM Users WHERE WalletAddress = @walletAddress');
-
-        if (existingUser.recordset[0].count > 0) {
-            return NextResponse.json(
-                { error: 'Wallet address already registered' },
-                { status: 409 }
+        try {
+            // Insert new user
+            await pool.query(
+                `INSERT INTO users (
+                    wallet_address, 
+                    name, 
+                    date_of_birth, 
+                    gender, 
+                    marital_status,
+                    registration_date
+                ) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)`,
+                [walletAddress, name, dateOfBirth, gender, isMarried]
             );
+
+            return NextResponse.json(
+                { message: 'User registered successfully' },
+                { status: 201 }
+            );
+        } catch (error: any) {
+            // Check for duplicate wallet address error
+            if (error.code === '23505') { // PostgreSQL unique violation error code
+                return NextResponse.json(
+                    { error: 'Wallet address already registered' },
+                    { status: 409 }
+                );
+            }
+            throw error; // Re-throw other errors
         }
-
-        // Insert new user
-        await pool.request()
-            .input('walletAddress', sql.NVarChar, walletAddress)
-            .input('name', sql.NVarChar, name)
-            .input('dateOfBirth', sql.Date, dateOfBirth)
-            .input('gender', sql.NVarChar, gender)
-            .input('maritalStatus', sql.Bit, isMarried)
-            .query(`
-                INSERT INTO Users (WalletAddress, Name, DateOfBirth, Gender, MaritalStatus)
-                VALUES (@walletAddress, @name, @dateOfBirth, @gender, @maritalStatus)
-            `);
-
-        return NextResponse.json(
-            { message: 'User registered successfully' },
-            { status: 201 }
-        );
     } catch (error) {
         console.error('Error registering user:', error);
         return NextResponse.json(
